@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, jsonify, abort, request, Response
+from flask import Flask, jsonify, abort, request, Response
 import os
 import json
 import hashlib
@@ -22,12 +22,10 @@ csp_policy = {
     "connect-src": ["'self'", f'{os.getenv("API_URL")}'],
 }
 
-
 # Helper function to format CSP header
 def generate_csp_header(policy):
     header = "; ".join([f"{key} {' '.join(value)}" for key, value in policy.items()])
     return header
-
 
 # Add Content Security Policy headers to all responses
 @app.after_request
@@ -36,6 +34,10 @@ def add_security_headers(response):
     response.headers["Content-Security-Policy"] = csp_header
     return response
 
+def file_generator(file_path, chunk_size=8192):
+    with open(file_path, 'rb') as file:
+        while chunk := file.read(chunk_size):
+            yield chunk
 
 @app.route("/files/", methods=["POST"])
 def send_file():
@@ -46,12 +48,9 @@ def send_file():
         abort(404)
     file_path = os.path.join(FILES_DIR, PROJECT_DATA[project], filename)
     if os.path.exists(file_path):
-        return send_from_directory(
-            os.path.dirname(file_path), os.path.basename(file_path)
-        )
+        return Response(file_generator(file_path), content_type='application/octet-stream')
     else:
         abort(404)
-
 
 @app.route("/files_info/<project>/")
 def send_files_info(project):
@@ -69,11 +68,9 @@ def send_files_info(project):
     else:
         abort(404)
 
-
 @app.route("/status/")
 def status():
     return jsonify({"status": "ok"})
-
 
 @app.route("/update_info/")
 def update_info():
@@ -84,11 +81,13 @@ def update_info():
     checksum = checksum.hexdigest()
     return jsonify({"version": checksum})
 
-
 @app.route("/download_update/")
 def download_update():
-    return send_from_directory(f"{FILES_DIR}/deploy", "game_updater.exe")
-
+    file_path = os.path.join(FILES_DIR, 'deploy', 'game_updater.exe')
+    if os.path.exists(file_path):
+        return Response(file_generator(file_path), content_type='application/octet-stream')
+    else:
+        abort(404)
 
 if __name__ == "__main__":
     app.run(
