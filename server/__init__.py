@@ -7,8 +7,14 @@ import dotenv
 dotenv.load_dotenv()
 
 app = Flask(__name__)
-FILES_DIR = os.getenv("FILES_DIR")
+FILES_DIR = os.getenv("FILES_DIR") or ""
 PROJECT_DATA = json.loads(open(f'{os.getenv("PROJECT_DATA")}', "r").read())
+PORT = int(os.getenv("PORT") or "") or 5000
+
+if not FILES_DIR and FILES_DIR is not None and not os.path.exists(FILES_DIR):
+    raise ValueError("FILES_DIR is not set in .env")
+if not PROJECT_DATA and PROJECT_DATA is not None and not os.path.exists(PROJECT_DATA):
+    raise ValueError("PROJECT_DATA is not set in .env")
 
 # Define Content Security Policy
 csp_policy = {
@@ -87,7 +93,7 @@ def download_update():
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=os.getenv("PORT"),
+        port=PORT,
         ssl_context=(
             os.getenv("SSL_CERT"),
             os.getenv("SSL_KEY"),
