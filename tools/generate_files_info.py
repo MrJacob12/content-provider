@@ -5,12 +5,12 @@ dotenv.load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-BASE_PATH = os.getenv("BASE_PATH")
-PROJECT_DATA_PATH = os.getenv("PROJECT_DATA_PATH")
+BASE_PATH = os.getenv("BASE_PATH") or ""
+PROJECT_DATA_PATH = os.getenv("PROJECT_DATA_PATH") or ""
 
-if not BASE_PATH:
+if not BASE_PATH and BASE_PATH is not None and not os.path.exists(BASE_PATH):
     raise ValueError("BASE_PATH is not set in .env")
-if not PROJECT_DATA_PATH:
+if not PROJECT_DATA_PATH and PROJECT_DATA_PATH is not None and not os.path.exists(PROJECT_DATA_PATH):
     raise ValueError("PROJECT_DATA_PATH is not set in .env")
 
 def generate_checksums(path):
@@ -62,8 +62,8 @@ def save_files_info(project_path):
     logger.info(f"Saved files_info.json to {output_file}")
 
 def generate_for_all_projects(base_directory):
-    if not os.path.exists(PROJECT_DATA_PATH):
-        open(PROJECT_DATA_PATH, "w").write(json.dumps({}))
+    if PROJECT_DATA_PATH is not None and not os.path.exists(PROJECT_DATA_PATH):
+        open(str(PROJECT_DATA_PATH), "w").write(json.dumps({}))
     project_data = json.loads(open(PROJECT_DATA_PATH, "r").read())
     for project in os.listdir(base_directory):
         project_path = os.path.join(base_directory, project)
